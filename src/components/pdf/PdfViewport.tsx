@@ -20,18 +20,33 @@ import { useAnnotationStore } from "../../stores/annotationStore";
 import { ReaderRightPanel } from "../layout/ReaderRightPanel";
 import { toggleTermOccurrence } from "../../services/database/vocabularyRepository";
 import { useSelectionStore } from "../../stores/selectionStore";
+import { DictionaryPopover } from "../dictionary/DictionaryPopover";
 
 export function PdfViewport({ paper }: { paper: Paper }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const { document, loadingState, error, pageNumber, zoom, rotation, setDocument, setLoadingState, setPageNumber, setZoom, reset } = useReaderStore();
   const updatePaper = useUiStore((state) => state.updatePaper);
   const [noTextLayer, setNoTextLayer] = useState(false);
+  const [dictionaryOpen, setDictionaryOpen] = useState(false);
   const { id: paperId, contentHash, filePath, fileName } = paper;
   const selectionToolbarEnabled = useSettingsStore((state) => state.settings.showSelectionToolbar);
   const setRightPanelMode = useUiStore((state) => state.setRightPanelMode);
   const { showToast } = useToast();
   const hydrateHighlights = useAnnotationStore((state) => state.hydratePaper);
   usePdfSelection(viewportRef, document, paperId, rotation, selectionToolbarEnabled);
+  const selectedContext = useSelectionStore((state) => state.selection);
+  const selectionAnchor = useSelectionStore((state) => state.anchor);
+
+  const toggleFavorite = useCallback(() => {
+    const selection = useSelectionStore.getState().selection;
+    if (!selection) return;
+    void toggleTermOccurrence(selection).then((added) => {
+      setRightPanelMode("vocabulary");
+      setDictionaryOpen(false);
+      showToast({ kind: "success", title: added ? "已收藏术语" : "已取消本次收藏" });
+      useSelectionStore.getState().closeToolbar();
+    }).catch((reason: unknown) => showToast({ kind: "error", title: "术语保存失败", description: reason instanceof Error ? reason.message : String(reason) }));
+  }, [setRightPanelMode, showToast]);
 
   useEffect(() => {
     let disposed = false;
@@ -120,21 +135,14 @@ export function PdfViewport({ paper }: { paper: Paper }) {
         </div>
         <ReaderControls onNavigate={navigate} onFitWidth={() => void fit("fit-width")} onFitPage={() => void fit("fit-page")} />
         <SelectionToolbar
-          onDictionary={() => showToast({ kind: "info", title: "选择已保留", description: "正在打开即时释义…" })}
-          onAi={() => setRightPanelMode("ai")}
+          onDictionary={() => { setDictionaryOpen(true); useSelectionStore.getState().closeToolbar(); }}
+          onAi={() => { setDictionaryOpen(false); setRightPanelMode("ai"); }}
           onNote={() => setRightPanelMode("notes")}
-          onFavorite={() => {
-            const selection = useSelectionStore.getState().selection;
-            if (!selection) return;
-            void toggleTermOccurrence(selection).then((added) => {
-              setRightPanelMode("vocabulary");
-              showToast({ kind: "success", title: added ? "已收藏术语" : "已取消本次收藏" });
-              useSelectionStore.getState().closeToolbar();
-            }).catch((reason: unknown) => showToast({ kind: "error", title: "术语保存失败", description: reason instanceof Error ? reason.message : String(reason) }));
-          }}
+          onFavorite={toggleFavorite}
           onHighlighted={() => showToast({ kind: "success", title: "已添加高亮" })}
           onPersistenceError={(message) => showToast({ kind: "error", title: "高亮保存失败", description: message })}
         />
+        {dictionaryOpen && selectedContext && selectionAnchor ? <DictionaryPopover selection={selectedContext} anchor={selectionAnchor} onClose={() => setDictionaryOpen(false)} onAi={() => { setDictionaryOpen(false); setRightPanelMode("ai"); }} onFavorite={toggleFavorite} /> : null}
       </div>
       <ReaderRightPanel paper={paper} onNavigate={navigate} />
     </div>
