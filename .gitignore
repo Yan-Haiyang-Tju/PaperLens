@@ -16,6 +16,7 @@ dist-ssr
 coverage/
 test-results/
 playwright-report/
+.cache-test/
 src-tauri/target/
 *.db
 *.db-shm

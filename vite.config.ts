@@ -1,12 +1,21 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { viteStaticCopy } from "vite-plugin-static-copy";
 
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(() => ({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    viteStaticCopy({ targets: [
+      { src: "node_modules/pdfjs-dist/cmaps/*", dest: "pdfjs/cmaps" },
+      { src: "node_modules/pdfjs-dist/standard_fonts/*", dest: "pdfjs/standard_fonts" },
+      { src: "node_modules/pdfjs-dist/wasm/*", dest: "pdfjs/wasm" },
+    ] }),
+  ],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

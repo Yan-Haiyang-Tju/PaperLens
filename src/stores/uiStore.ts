@@ -19,6 +19,7 @@ type UiState = {
   openPaper: (paper: Paper) => void;
   activatePaper: (paperId: string) => void;
   closePaper: (paperId: string) => void;
+  updatePaper: (paperId: string, patch: Partial<Paper>) => void;
 };
 
 export const useUiStore = create<UiState>((set) => ({
@@ -49,4 +50,5 @@ export const useUiStore = create<UiState>((set) => ({
       view: nextPaper ? "reader" : "library",
     };
   }),
+  updatePaper: (paperId, patch) => set((state) => ({ openPapers: state.openPapers.map((paper) => paper.id === paperId ? { ...paper, ...patch } : paper) })),
 }));
