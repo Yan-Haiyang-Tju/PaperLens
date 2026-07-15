@@ -64,7 +64,7 @@ export async function readPaperBytes(paper: Pick<Paper, "id" | "filePath">): Pro
     if (!bytes) throw new Error("浏览器预览无法在刷新后重新读取文件，请再次打开 PDF。");
     return bytes.slice();
   }
-  const response = await invoke<ArrayBuffer>("read_pdf_bytes", { paperId: paper.id, path: paper.filePath });
+  const response = await invoke<ArrayBuffer>("read_pdf_bytes", { paperId: paper.id });
   return new Uint8Array(response);
 }
 

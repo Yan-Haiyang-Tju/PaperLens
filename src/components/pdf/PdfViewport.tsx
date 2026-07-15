@@ -14,7 +14,7 @@ import { usePdfSelection } from "../../hooks/usePdfSelection";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { SelectionToolbar } from "../selection/SelectionToolbar";
 import { useToast } from "../ui/ToastProvider";
-import { listHighlights } from "../../services/database/annotationRepository";
+import { listHighlights, saveHighlight, saveSelection } from "../../services/database/annotationRepository";
 import { getReadingState, saveReadingState } from "../../services/database/paperRepository";
 import { useAnnotationStore } from "../../stores/annotationStore";
 import { ReaderRightPanel } from "../layout/ReaderRightPanel";
@@ -37,6 +37,7 @@ export function PdfViewport({ paper }: { paper: Paper }) {
   const { id: paperId, contentHash, filePath, fileName } = paper;
   const selectionToolbarEnabled = useSettingsStore((state) => state.settings.showSelectionToolbar);
   const setRightPanelMode = useUiStore((state) => state.setRightPanelMode);
+  const setSidebarMode = useUiStore((state) => state.setSidebarMode);
   const { showToast } = useToast();
   const hydrateHighlights = useAnnotationStore((state) => state.hydratePaper);
   usePdfSelection(viewportRef, document, paperId, rotation, selectionToolbarEnabled);
@@ -78,6 +79,26 @@ export function PdfViewport({ paper }: { paper: Paper }) {
     if (!settings.aiPrivacyAcknowledged) setPendingAiRequest(request);
     else startAiRequest(request);
   }, [paper, paperId, showToast, startAiRequest]);
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const action = (event as CustomEvent<string>).detail;
+      const selection = useSelectionStore.getState().selection;
+      if (action === "search") { setSidebarMode("search"); return; }
+      if (action === "toggleSidebar") { setSidebarMode(useUiStore.getState().sidebarMode === "none" ? "thumbnails" : "none"); return; }
+      if (!selection || selection.paperId !== paperId) { if (["dictionary", "ai", "highlight", "note", "favorite"].includes(action)) showToast({ kind: "info", title: "请先选择论文中的文字" }); return; }
+      if (action === "dictionary") { setDictionaryOpen(true); useSelectionStore.getState().closeToolbar(); }
+      if (action === "ai") requestAi();
+      if (action === "note") setRightPanelMode("notes");
+      if (action === "favorite") toggleFavorite();
+      if (action === "highlight") {
+        const highlight = useAnnotationStore.getState().addHighlight(selection, useSettingsStore.getState().settings.defaultHighlightColor);
+        void saveSelection(selection).then(() => saveHighlight(highlight)).then(() => showToast({ kind: "success", title: "已添加高亮" })).catch((reason: unknown) => { useAnnotationStore.getState().deleteHighlight(highlight.id); showToast({ kind: "error", title: "高亮保存失败", description: String(reason) }); });
+      }
+    };
+    window.addEventListener("paperlens:reader-action", handler);
+    return () => window.removeEventListener("paperlens:reader-action", handler);
+  }, [paperId, requestAi, setRightPanelMode, setSidebarMode, showToast, toggleFavorite]);
 
   useEffect(() => {
     let disposed = false;

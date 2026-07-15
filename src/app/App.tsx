@@ -2,7 +2,7 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { useCallback, useEffect } from "react";
 import { AppShell } from "../components/layout/AppShell";
 import { PaperLibrary } from "../components/library/PaperLibrary";
-import { SettingsPlaceholder } from "../components/settings/SettingsPlaceholder";
+import { SettingsPage } from "../components/settings/SettingsPage";
 import { PdfViewport } from "../components/pdf/PdfViewport";
 import { chooseAndImportPaper, listenForPdfDrops } from "../services/tauri/paperService";
 import { useUiStore } from "../stores/uiStore";
@@ -10,6 +10,8 @@ import { useToast } from "../components/ui/ToastProvider";
 import { useAppBootstrap } from "../hooks/useAppBootstrap";
 import { VocabularyPanel } from "../components/vocabulary/VocabularyPanel";
 import { useReaderStore } from "../stores/readerStore";
+import { useGlobalShortcuts } from "../hooks/useGlobalShortcuts";
+import { useSettingsStore } from "../stores/settingsStore";
 
 export default function App() {
   const { view, openPapers, libraryPapers, openPaper, activePaperId } = useUiStore();
@@ -25,6 +27,8 @@ export default function App() {
       showToast({ kind: "error", title: "无法打开论文", description: reason instanceof Error ? reason.message : String(reason) });
     }
   }, [openPaper, showToast]);
+  const shortcuts = useSettingsStore((state) => state.settings.shortcuts);
+  useGlobalShortcuts(shortcuts, () => void handleOpen());
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -34,7 +38,7 @@ export default function App() {
   return (
     <TooltipPrimitive.Provider>
       <AppShell>
-        {view === "settings" ? <SettingsPlaceholder /> : view === "library" ? (
+        {view === "settings" ? <SettingsPage /> : view === "library" ? (
           <PaperLibrary papers={libraryPapers} onOpen={() => void handleOpen()} onOpenRecent={openPaper} />
         ) : view === "vocabulary" ? (
           <VocabularyPanel onNavigate={(paperId, page) => {
