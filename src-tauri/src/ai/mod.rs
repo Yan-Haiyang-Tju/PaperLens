@@ -460,7 +460,7 @@ pub async fn explain_selection(
                 request_id: request.request_id.clone(),
                 selection_id: request.selection_id.clone(),
                 paper_id: request.paper.id.clone(),
-                explanation,
+                explanation: Box::new(explanation),
                 usage: Default::default(),
                 cached: true,
             },
@@ -519,7 +519,7 @@ pub async fn explain_selection(
                     request_id: request.request_id.clone(),
                     selection_id: request.selection_id.clone(),
                     paper_id: request.paper.id.clone(),
-                    explanation: response.explanation,
+                    explanation: Box::new(response.explanation),
                     usage: response.usage,
                     cached: false,
                 },
@@ -596,8 +596,10 @@ mod tests {
 
     #[test]
     fn settings_reject_remote_plain_http() {
-        let mut settings = AiSettings::default();
-        settings.base_url = "http://example.com/v1".into();
+        let mut settings = AiSettings {
+            base_url: "http://example.com/v1".into(),
+            ..AiSettings::default()
+        };
         assert!(validate_settings(&settings).is_err());
         settings.base_url = "http://localhost:8000/v1".into();
         assert!(validate_settings(&settings).is_ok());

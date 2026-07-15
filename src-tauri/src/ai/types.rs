@@ -220,7 +220,7 @@ pub enum AiStreamEvent {
         request_id: String,
         selection_id: String,
         paper_id: String,
-        explanation: AiExplanation,
+        explanation: Box<AiExplanation>,
         usage: TokenUsage,
         cached: bool,
     },
