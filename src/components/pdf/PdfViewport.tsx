@@ -21,6 +21,11 @@ import { ReaderRightPanel } from "../layout/ReaderRightPanel";
 import { toggleTermOccurrence } from "../../services/database/vocabularyRepository";
 import { useSelectionStore } from "../../stores/selectionStore";
 import { DictionaryPopover } from "../dictionary/DictionaryPopover";
+import { AiPrivacyDialog } from "../ai/AiPrivacyDialog";
+import { buildExplainSelectionRequest } from "../../services/ai/contextBuilder";
+import { cancelAiRequest, explainSelection } from "../../services/ai/aiClient";
+import { useAiStore } from "../../stores/aiStore";
+import type { ExplainSelectionRequest } from "../../types/ai";
 
 export function PdfViewport({ paper }: { paper: Paper }) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -28,6 +33,7 @@ export function PdfViewport({ paper }: { paper: Paper }) {
   const updatePaper = useUiStore((state) => state.updatePaper);
   const [noTextLayer, setNoTextLayer] = useState(false);
   const [dictionaryOpen, setDictionaryOpen] = useState(false);
+  const [pendingAiRequest, setPendingAiRequest] = useState<ExplainSelectionRequest | null>(null);
   const { id: paperId, contentHash, filePath, fileName } = paper;
   const selectionToolbarEnabled = useSettingsStore((state) => state.settings.showSelectionToolbar);
   const setRightPanelMode = useUiStore((state) => state.setRightPanelMode);
@@ -47,6 +53,31 @@ export function PdfViewport({ paper }: { paper: Paper }) {
       useSelectionStore.getState().closeToolbar();
     }).catch((reason: unknown) => showToast({ kind: "error", title: "术语保存失败", description: reason instanceof Error ? reason.message : String(reason) }));
   }, [setRightPanelMode, showToast]);
+
+  const startAiRequest = useCallback((request: ExplainSelectionRequest) => {
+    const previous = useAiStore.getState().request;
+    if (previous && previous.requestId !== request.requestId && ["loading", "streaming", "repairing"].includes(useAiStore.getState().status)) void cancelAiRequest(previous.requestId);
+    useAiStore.getState().begin(request);
+    setRightPanelMode("ai");
+    const provider = useSettingsStore.getState().settings.aiProvider;
+    void explainSelection(request, provider, (event) => useAiStore.getState().receive(event)).catch((reason: unknown) => {
+      useAiStore.getState().receive({
+        type: "failed", paperId: request.paper.id, requestId: request.requestId, selectionId: request.selectionId,
+        code: "request_failed", message: reason instanceof Error ? reason.message : "AI 请求失败",
+      });
+    });
+  }, [setRightPanelMode]);
+
+  const requestAi = useCallback(() => {
+    const selection = useSelectionStore.getState().selection;
+    if (!selection || selection.paperId !== paperId) { showToast({ kind: "info", title: "请先选择论文中的文字" }); return; }
+    const settings = useSettingsStore.getState().settings;
+    const request = buildExplainSelectionRequest(paper, selection, settings);
+    setDictionaryOpen(false);
+    useSelectionStore.getState().closeToolbar();
+    if (!settings.aiPrivacyAcknowledged) setPendingAiRequest(request);
+    else startAiRequest(request);
+  }, [paper, paperId, showToast, startAiRequest]);
 
   useEffect(() => {
     let disposed = false;
@@ -136,15 +167,21 @@ export function PdfViewport({ paper }: { paper: Paper }) {
         <ReaderControls onNavigate={navigate} onFitWidth={() => void fit("fit-width")} onFitPage={() => void fit("fit-page")} />
         <SelectionToolbar
           onDictionary={() => { setDictionaryOpen(true); useSelectionStore.getState().closeToolbar(); }}
-          onAi={() => { setDictionaryOpen(false); setRightPanelMode("ai"); }}
+          onAi={requestAi}
           onNote={() => setRightPanelMode("notes")}
           onFavorite={toggleFavorite}
           onHighlighted={() => showToast({ kind: "success", title: "已添加高亮" })}
           onPersistenceError={(message) => showToast({ kind: "error", title: "高亮保存失败", description: message })}
         />
-        {dictionaryOpen && selectedContext && selectionAnchor ? <DictionaryPopover selection={selectedContext} anchor={selectionAnchor} onClose={() => setDictionaryOpen(false)} onAi={() => { setDictionaryOpen(false); setRightPanelMode("ai"); }} onFavorite={toggleFavorite} /> : null}
+        {dictionaryOpen && selectedContext && selectionAnchor ? <DictionaryPopover selection={selectedContext} anchor={selectionAnchor} onClose={() => setDictionaryOpen(false)} onAi={requestAi} onFavorite={toggleFavorite} /> : null}
       </div>
-      <ReaderRightPanel paper={paper} onNavigate={navigate} />
+      <ReaderRightPanel paper={paper} onNavigate={navigate} onRequestAi={requestAi} />
+      <AiPrivacyDialog request={pendingAiRequest} onCancel={() => setPendingAiRequest(null)} onConfirm={() => {
+        if (!pendingAiRequest) return;
+        useSettingsStore.getState().patchSettings({ aiPrivacyAcknowledged: true });
+        startAiRequest(pendingAiRequest);
+        setPendingAiRequest(null);
+      }} />
     </div>
   );
 }

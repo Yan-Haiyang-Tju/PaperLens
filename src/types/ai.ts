@@ -50,8 +50,9 @@ export const explainSelectionRequestSchema = z.object({
 export type ExplainSelectionRequest = z.infer<typeof explainSelectionRequestSchema>;
 
 export type AiStreamEvent =
-  | { type: "started"; requestId: string; selectionId: string }
-  | { type: "delta"; requestId: string; selectionId: string; content: string }
-  | { type: "completed"; requestId: string; selectionId: string; explanation: AiExplanation; cached: boolean }
-  | { type: "failed"; requestId: string; selectionId: string; code: string; message: string }
-  | { type: "cancelled"; requestId: string; selectionId: string };
+  | { type: "started"; paperId: string; requestId: string; selectionId: string }
+  | { type: "delta"; paperId: string; requestId: string; selectionId: string; content: string }
+  | { type: "repairing"; paperId: string; requestId: string; selectionId: string }
+  | { type: "completed"; paperId: string; requestId: string; selectionId: string; explanation: AiExplanation; cached: boolean }
+  | { type: "failed"; paperId: string; requestId: string; selectionId: string; code: string; message: string }
+  | { type: "cancelled"; paperId: string; requestId: string; selectionId: string };

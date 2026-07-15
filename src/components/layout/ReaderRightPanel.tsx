@@ -4,8 +4,9 @@ import { useUiStore } from "../../stores/uiStore";
 import type { Paper } from "../../types/paper";
 import { NotesPanel } from "../notes/NotesPanel";
 import { VocabularyPanel } from "../vocabulary/VocabularyPanel";
+import { AiExplanationPanel } from "../ai/AiExplanationPanel";
 
-export function ReaderRightPanel({ paper, onNavigate }: { paper: Paper; onNavigate: (page: number) => void }) {
+export function ReaderRightPanel({ paper, onNavigate, onRequestAi }: { paper: Paper; onNavigate: (page: number) => void; onRequestAi: () => void }) {
   const { rightPanelMode, rightPanelWidth, setRightPanelMode, setRightPanelWidth } = useUiStore();
   if (rightPanelMode === "none") return null;
   const title = rightPanelMode === "ai" ? "AI 语境解释" : rightPanelMode === "notes" ? "笔记" : "本篇词汇";
@@ -24,7 +25,7 @@ export function ReaderRightPanel({ paper, onNavigate }: { paper: Paper; onNaviga
       <div className="reader-right-panel__content">
         {rightPanelMode === "notes" ? <NotesPanel paperId={paper.id} onNavigate={onNavigate} /> : null}
         {rightPanelMode === "vocabulary" ? <VocabularyPanel paperId={paper.id} onNavigate={(_, page) => onNavigate(page)} /> : null}
-        {rightPanelMode === "ai" ? <div className="panel-hint"><Bot size={20} /><span>选中文字后点击“AI 解释”。只有此时才会发送所示上下文。</span></div> : null}
+        {rightPanelMode === "ai" ? <AiExplanationPanel onRetry={onRequestAi} onOpenNotes={() => setRightPanelMode("notes")} /> : null}
       </div>
     </aside>
   );
