@@ -8,16 +8,19 @@ import { useSettingsStore } from "../../stores/settingsStore";
 import type { HighlightColor } from "../../types/annotation";
 import { calculateToolbarPosition } from "../../utils/selectionGeometry";
 import { HighlightColorMenu } from "../annotations/HighlightColorMenu";
+import { saveHighlight, saveSelection } from "../../services/database/annotationRepository";
 
-export function SelectionToolbar({ onDictionary, onAi, onNote, onFavorite, onHighlighted }: {
+export function SelectionToolbar({ onDictionary, onAi, onNote, onFavorite, onHighlighted, onPersistenceError }: {
   onDictionary: () => void;
   onAi: () => void;
   onNote: () => void;
   onFavorite: () => void;
   onHighlighted?: () => void;
+  onPersistenceError?: (message: string) => void;
 }) {
   const { selection, anchor, toolbarOpen, closeToolbar } = useSelectionStore();
   const addHighlight = useAnnotationStore((state) => state.addHighlight);
+  const deleteHighlight = useAnnotationStore((state) => state.deleteHighlight);
   const defaultColor = useSettingsStore((state) => state.settings.defaultHighlightColor);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [colorMenuOpen, setColorMenuOpen] = useState(false);
@@ -35,11 +38,14 @@ export function SelectionToolbar({ onDictionary, onAi, onNote, onFavorite, onHig
   if (!toolbarOpen || !selection || !position) return null;
 
   const runHighlight = (color: HighlightColor) => {
-    addHighlight(selection, color);
+    const highlight = addHighlight(selection, color);
     setColorMenuOpen(false);
     closeToolbar();
     window.getSelection()?.removeAllRanges();
-    onHighlighted?.();
+    void saveSelection(selection).then(() => saveHighlight(highlight)).then(() => onHighlighted?.()).catch((reason: unknown) => {
+      deleteHighlight(highlight.id);
+      onPersistenceError?.(reason instanceof Error ? reason.message : "高亮保存失败");
+    });
   };
   const copy = async () => {
     if (isTauri()) await writeText(selection.selectedText);

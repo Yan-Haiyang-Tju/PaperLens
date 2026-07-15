@@ -5,6 +5,7 @@ import type { SelectionContext } from "../types/selection";
 type AnnotationState = {
   highlights: Highlight[];
   setHighlights: (items: Highlight[]) => void;
+  hydratePaper: (paperId: string, items: Highlight[]) => void;
   addHighlight: (selection: SelectionContext, color: HighlightColor) => Highlight;
   updateHighlightColor: (id: string, color: HighlightColor) => void;
   deleteHighlight: (id: string) => void;
@@ -14,6 +15,7 @@ type AnnotationState = {
 export const useAnnotationStore = create<AnnotationState>((set) => ({
   highlights: [],
   setHighlights: (highlights) => set({ highlights }),
+  hydratePaper: (paperId, items) => set((state) => ({ highlights: [...state.highlights.filter((item) => item.paperId !== paperId), ...items] })),
   addHighlight: (selection, color) => {
     const now = new Date().toISOString();
     const highlight: Highlight = {

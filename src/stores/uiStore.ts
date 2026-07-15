@@ -11,6 +11,7 @@ type UiState = {
   rightPanelMode: RightPanelMode;
   rightPanelWidth: number;
   openPapers: Paper[];
+  libraryPapers: Paper[];
   activePaperId: string | null;
   navigate: (view: AppView) => void;
   setSidebarMode: (mode: SidebarMode) => void;
@@ -20,6 +21,7 @@ type UiState = {
   activatePaper: (paperId: string) => void;
   closePaper: (paperId: string) => void;
   updatePaper: (paperId: string, patch: Partial<Paper>) => void;
+  setLibraryPapers: (papers: Paper[]) => void;
 };
 
 export const useUiStore = create<UiState>((set) => ({
@@ -28,6 +30,7 @@ export const useUiStore = create<UiState>((set) => ({
   rightPanelMode: "none",
   rightPanelWidth: 360,
   openPapers: [],
+  libraryPapers: [],
   activePaperId: null,
   navigate: (view) => set({ view }),
   setSidebarMode: (sidebarMode) => set({ sidebarMode }),
@@ -35,6 +38,7 @@ export const useUiStore = create<UiState>((set) => ({
   setRightPanelWidth: (rightPanelWidth) => set({ rightPanelWidth: Math.min(560, Math.max(288, rightPanelWidth)) }),
   openPaper: (paper) => set((state) => ({
     openPapers: state.openPapers.some((item) => item.id === paper.id) ? state.openPapers : [...state.openPapers, paper],
+    libraryPapers: [paper, ...state.libraryPapers.filter((item) => item.id !== paper.id)],
     activePaperId: paper.id,
     view: "reader",
   })),
@@ -50,5 +54,9 @@ export const useUiStore = create<UiState>((set) => ({
       view: nextPaper ? "reader" : "library",
     };
   }),
-  updatePaper: (paperId, patch) => set((state) => ({ openPapers: state.openPapers.map((paper) => paper.id === paperId ? { ...paper, ...patch } : paper) })),
+  updatePaper: (paperId, patch) => set((state) => ({
+    openPapers: state.openPapers.map((paper) => paper.id === paperId ? { ...paper, ...patch } : paper),
+    libraryPapers: state.libraryPapers.map((paper) => paper.id === paperId ? { ...paper, ...patch } : paper),
+  })),
+  setLibraryPapers: (libraryPapers) => set({ libraryPapers }),
 }));

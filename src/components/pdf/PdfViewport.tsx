@@ -14,6 +14,12 @@ import { usePdfSelection } from "../../hooks/usePdfSelection";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { SelectionToolbar } from "../selection/SelectionToolbar";
 import { useToast } from "../ui/ToastProvider";
+import { listHighlights } from "../../services/database/annotationRepository";
+import { getReadingState, saveReadingState } from "../../services/database/paperRepository";
+import { useAnnotationStore } from "../../stores/annotationStore";
+import { ReaderRightPanel } from "../layout/ReaderRightPanel";
+import { toggleTermOccurrence } from "../../services/database/vocabularyRepository";
+import { useSelectionStore } from "../../stores/selectionStore";
 
 export function PdfViewport({ paper }: { paper: Paper }) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -24,6 +30,7 @@ export function PdfViewport({ paper }: { paper: Paper }) {
   const selectionToolbarEnabled = useSettingsStore((state) => state.settings.showSelectionToolbar);
   const setRightPanelMode = useUiStore((state) => state.setRightPanelMode);
   const { showToast } = useToast();
+  const hydrateHighlights = useAnnotationStore((state) => state.hydratePaper);
   usePdfSelection(viewportRef, document, paperId, rotation, selectionToolbarEnabled);
 
   useEffect(() => {
@@ -38,11 +45,20 @@ export function PdfViewport({ paper }: { paper: Paper }) {
         loadedDocument = await loadPdfDocument(bytes);
         if (disposed) { await destroyPdfDocument(loadedDocument); return; }
         setDocument(loadedDocument);
+        const [savedState, highlights] = await Promise.all([getReadingState(paperId), listHighlights(paperId)]);
+        if (disposed) return;
+        if (savedState) useReaderStore.getState().hydrate(savedState);
+        hydrateHighlights(paperId, highlights);
         const metadata = await readPdfMetadata(loadedDocument, fileName.replace(/\.pdf$/i, ""));
         const next = { ...metadata, pageCount: loadedDocument.numPages };
         updatePaper(paperId, next);
         void updatePaperMetadata(paperId, next).catch(() => undefined);
         setLoadingState("ready");
+        if (savedState) window.setTimeout(() => {
+          const target = globalThis.document.getElementById(`pdf-page-${savedState.pageNumber}`);
+          target?.scrollIntoView({ block: "start" });
+          if (viewportRef.current) viewportRef.current.scrollTop += savedState.scrollOffset;
+        }, 0);
         let characters = 0;
         const samplePages = Math.min(3, loadedDocument.numPages);
         for (let page = 1; page <= samplePages; page += 1) characters += (await getPageText(loadedDocument, page)).plainText.length;
@@ -57,7 +73,18 @@ export function PdfViewport({ paper }: { paper: Paper }) {
       if (loadedDocument) { clearPageTextCache(loadedDocument); void destroyPdfDocument(loadedDocument); }
       reset();
     };
-  }, [contentHash, fileName, filePath, paperId, reset, setDocument, setLoadingState, updatePaper]);
+  }, [contentHash, fileName, filePath, hydrateHighlights, paperId, reset, setDocument, setLoadingState, updatePaper]);
+
+  useEffect(() => {
+    if (loadingState !== "ready") return;
+    const timer = window.setTimeout(() => {
+      void saveReadingState({
+        paperId, pageNumber, scrollOffset: viewportRef.current?.scrollTop ?? 0, zoom, zoomMode: useReaderStore.getState().zoomMode,
+        rotation, viewMode: useReaderStore.getState().viewMode, updatedAt: new Date().toISOString(),
+      }).catch((reason: unknown) => showToast({ kind: "error", title: "阅读进度保存失败", description: reason instanceof Error ? reason.message : String(reason) }));
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [loadingState, pageNumber, paperId, rotation, showToast, zoom]);
 
   const navigate = useCallback((page: number) => {
     setPageNumber(page);
@@ -96,10 +123,20 @@ export function PdfViewport({ paper }: { paper: Paper }) {
           onDictionary={() => showToast({ kind: "info", title: "选择已保留", description: "正在打开即时释义…" })}
           onAi={() => setRightPanelMode("ai")}
           onNote={() => setRightPanelMode("notes")}
-          onFavorite={() => setRightPanelMode("vocabulary")}
+          onFavorite={() => {
+            const selection = useSelectionStore.getState().selection;
+            if (!selection) return;
+            void toggleTermOccurrence(selection).then((added) => {
+              setRightPanelMode("vocabulary");
+              showToast({ kind: "success", title: added ? "已收藏术语" : "已取消本次收藏" });
+              useSelectionStore.getState().closeToolbar();
+            }).catch((reason: unknown) => showToast({ kind: "error", title: "术语保存失败", description: reason instanceof Error ? reason.message : String(reason) }));
+          }}
           onHighlighted={() => showToast({ kind: "success", title: "已添加高亮" })}
+          onPersistenceError={(message) => showToast({ kind: "error", title: "高亮保存失败", description: message })}
         />
       </div>
+      <ReaderRightPanel paper={paper} onNavigate={navigate} />
     </div>
   );
 }
