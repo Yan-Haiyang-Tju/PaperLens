@@ -10,6 +10,10 @@ import type { Paper } from "../../types/paper";
 import { PdfPage } from "./PdfPage";
 import { ReaderControls } from "./ReaderControls";
 import { ReaderSidebar } from "./ReaderSidebar";
+import { usePdfSelection } from "../../hooks/usePdfSelection";
+import { useSettingsStore } from "../../stores/settingsStore";
+import { SelectionToolbar } from "../selection/SelectionToolbar";
+import { useToast } from "../ui/ToastProvider";
 
 export function PdfViewport({ paper }: { paper: Paper }) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -17,6 +21,10 @@ export function PdfViewport({ paper }: { paper: Paper }) {
   const updatePaper = useUiStore((state) => state.updatePaper);
   const [noTextLayer, setNoTextLayer] = useState(false);
   const { id: paperId, contentHash, filePath, fileName } = paper;
+  const selectionToolbarEnabled = useSettingsStore((state) => state.settings.showSelectionToolbar);
+  const setRightPanelMode = useUiStore((state) => state.setRightPanelMode);
+  const { showToast } = useToast();
+  usePdfSelection(viewportRef, document, paperId, rotation, selectionToolbarEnabled);
 
   useEffect(() => {
     let disposed = false;
@@ -81,9 +89,16 @@ export function PdfViewport({ paper }: { paper: Paper }) {
       <div className="pdf-viewport" ref={viewportRef}>
         {noTextLayer ? <div className="scan-notice"><ScanText size={16} /><span>该 PDF 可能是扫描件，不支持直接划词。OCR 将在后续版本提供。</span></div> : null}
         <div className="pdf-page-list" style={{ gap: "var(--pdf-page-gap, 16px)" }}>
-          {Array.from({ length: document.numPages }, (_, index) => index + 1).map((page) => <PdfPage key={page} document={document} pageNumber={page} zoom={zoom} rotation={rotation} onPageVisible={onPageVisible} />)}
+          {Array.from({ length: document.numPages }, (_, index) => index + 1).map((page) => <PdfPage key={page} document={document} paperId={paperId} pageNumber={page} zoom={zoom} rotation={rotation} onPageVisible={onPageVisible} />)}
         </div>
         <ReaderControls onNavigate={navigate} onFitWidth={() => void fit("fit-width")} onFitPage={() => void fit("fit-page")} />
+        <SelectionToolbar
+          onDictionary={() => showToast({ kind: "info", title: "选择已保留", description: "正在打开即时释义…" })}
+          onAi={() => setRightPanelMode("ai")}
+          onNote={() => setRightPanelMode("notes")}
+          onFavorite={() => setRightPanelMode("vocabulary")}
+          onHighlighted={() => showToast({ kind: "success", title: "已添加高亮" })}
+        />
       </div>
     </div>
   );

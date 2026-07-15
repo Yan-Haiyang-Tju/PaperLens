@@ -1,11 +1,13 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { RenderingCancelledException, TextLayer, type PDFDocumentProxy, type RenderTask } from "pdfjs-dist";
 import { getPageText } from "../../services/pdf/pageTextCache";
+import { AnnotationOverlay } from "../annotations/AnnotationOverlay";
 
 type PageSize = { width: number; height: number };
 
-export const PdfPage = memo(function PdfPage({ document, pageNumber, zoom, rotation, onPageVisible }: {
+export const PdfPage = memo(function PdfPage({ document, paperId, pageNumber, zoom, rotation, onPageVisible }: {
   document: PDFDocumentProxy;
+  paperId: string;
   pageNumber: number;
   zoom: number;
   rotation: 0 | 90 | 180 | 270;
@@ -80,7 +82,7 @@ export const PdfPage = memo(function PdfPage({ document, pageNumber, zoom, rotat
         {error ? <div className="pdf-page__error" role="alert">第 {pageNumber} 页渲染失败<br /><small>{error}</small></div> : null}
         <canvas ref={canvasRef} className="pdf-canvas" aria-label={`PDF 第 ${pageNumber} 页`} />
         <div ref={textLayerRef} className="textLayer pdf-text-layer" data-page-number={pageNumber} />
-        <div className="annotation-overlay" aria-hidden />
+        <AnnotationOverlay paperId={paperId} pageNumber={pageNumber} rotation={rotation} />
       </div>
       <span className="pdf-page-number">{pageNumber}</span>
     </div>
