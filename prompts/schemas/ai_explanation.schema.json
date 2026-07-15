@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://paperlens.app/schemas/ai-explanation.schema.json",
+  "title": "PaperLens AI explanation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "selectedText",
+    "expressionType",
+    "partOfSpeech",
+    "basicMeaningZh",
+    "contextualMeaningZh",
+    "sentenceTranslationZh",
+    "technicalExplanationZh",
+    "roleInPaperZh",
+    "collocations",
+    "relatedTerms",
+    "ambiguityNoteZh",
+    "confidence"
+  ],
+  "properties": {
+    "selectedText": { "type": "string", "minLength": 1 },
+    "expressionType": {
+      "type": "string",
+      "enum": [
+        "general_word",
+        "academic_expression",
+        "technical_term",
+        "abbreviation",
+        "model_or_dataset",
+        "sentence_or_passage",
+        "formula_related",
+        "unknown"
+      ]
+    },
+    "partOfSpeech": { "type": ["string", "null"] },
+    "basicMeaningZh": { "type": "string" },
+    "contextualMeaningZh": { "type": "string", "minLength": 1 },
+    "sentenceTranslationZh": { "type": ["string", "null"] },
+    "technicalExplanationZh": { "type": ["string", "null"] },
+    "roleInPaperZh": { "type": ["string", "null"] },
+    "collocations": { "type": "array", "items": { "type": "string" }, "maxItems": 12 },
+    "relatedTerms": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["term", "relationZh"],
+        "properties": {
+          "term": { "type": "string", "minLength": 1 },
+          "relationZh": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "ambiguityNoteZh": { "type": ["string", "null"] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+  }
+}
+

@@ -68,7 +68,7 @@ export function SelectionToolbar({ onDictionary, onAi, onNote, onFavorite, onHig
     <div ref={toolbarRef} className="selection-toolbar" role="toolbar" aria-label="选中文字操作" style={{ left: position.left, top: position.top }} onPointerDown={(event) => event.preventDefault()} onKeyDown={handleKeyboard}>
       <button type="button" onClick={onDictionary}><Languages size={15} /><span>即时释义</span></button>
       <button type="button" onClick={onAi}><Sparkles size={15} /><span>AI 解释</span></button>
-      <button type="button" aria-expanded={colorMenuOpen} onClick={() => setColorMenuOpen((value) => !value)}><Highlighter size={15} /><i className={`highlight-swatch highlight-swatch--${defaultColor}`} /><ChevronDown size={12} /></button>
+      <button type="button" aria-label="高亮" aria-expanded={colorMenuOpen} onClick={() => setColorMenuOpen((value) => !value)}><Highlighter size={15} /><i className={`highlight-swatch highlight-swatch--${defaultColor}`} /><ChevronDown size={12} /></button>
       <button type="button" onClick={onNote}><NotebookPen size={15} /><span>笔记</span></button>
       <button type="button" onClick={onFavorite}><Bookmark size={15} /><span>收藏</span></button>
       <button type="button" onClick={() => void copy()}><Copy size={15} /><span>复制</span></button>

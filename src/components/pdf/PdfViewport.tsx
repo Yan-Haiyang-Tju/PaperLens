@@ -40,7 +40,7 @@ export function PdfViewport({ paper }: { paper: Paper }) {
   const setSidebarMode = useUiStore((state) => state.setSidebarMode);
   const { showToast } = useToast();
   const hydrateHighlights = useAnnotationStore((state) => state.hydratePaper);
-  usePdfSelection(viewportRef, document, paperId, rotation, selectionToolbarEnabled);
+  usePdfSelection(viewportRef, document, paperId, rotation, selectionToolbarEnabled && loadingState === "ready");
   const selectedContext = useSelectionStore((state) => state.selection);
   const selectionAnchor = useSelectionStore((state) => state.anchor);
 

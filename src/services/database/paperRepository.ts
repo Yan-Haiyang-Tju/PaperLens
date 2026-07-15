@@ -19,7 +19,7 @@ function mapPaper(value: unknown): Paper {
 export async function listRecentPapers(limit = 50): Promise<Paper[]> {
   const database = await getDatabase();
   if (!database) return [];
-  const rows = await database.select<unknown[]>("SELECT id,content_hash,file_path,file_name,title,authors_json,abstract_text,page_count,file_size,created_at,last_opened_at FROM papers ORDER BY last_opened_at DESC LIMIT $1", [limit]);
+  const rows = await database.select<unknown[]>("SELECT id,content_hash,file_path,file_name,COALESCE(title,file_name) title,authors_json,abstract_text,COALESCE(page_count,0) page_count,file_size,created_at,last_opened_at FROM papers ORDER BY last_opened_at DESC LIMIT $1", [limit]);
   return rows.map(mapPaper);
 }
 

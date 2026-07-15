@@ -59,6 +59,12 @@ export function usePdfSelection(container: RefObject<HTMLElement | null>, docume
     };
     element.addEventListener("pointerup", capture);
     element.addEventListener("keyup", capture);
-    return () => { request += 1; element.removeEventListener("pointerup", capture); element.removeEventListener("keyup", capture); };
+    globalThis.document.addEventListener("selectionchange", capture);
+    return () => {
+      request += 1;
+      element.removeEventListener("pointerup", capture);
+      element.removeEventListener("keyup", capture);
+      globalThis.document.removeEventListener("selectionchange", capture);
+    };
   }, [container, document, enabled, paperId, rotation]);
 }
