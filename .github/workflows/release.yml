@@ -36,8 +36,8 @@ jobs:
           tagName: v__VERSION__
           releaseName: PaperLens v__VERSION__
           releaseBody: |
-            This release makes the reading workflow faster and more complete: smooth Ctrl+wheel zoom, responsive outlines, a bundled offline English-Chinese dictionary, actionable notes and AI panels, and nested paper collections.
+            This release fixes PDF text-layer scaling so the text recognized by dictionary, vocabulary, notes, highlights, and AI actions matches the visible selection precisely.
 
-            Download the installer for your platform below. See the bilingual README for setup, privacy, shortcuts, and source-build instructions.
+            The bilingual product page now also demonstrates the contextual professional-vocabulary workflow with real screenshots from Attention Is All You Need.
           releaseDraft: false
           prerelease: false
