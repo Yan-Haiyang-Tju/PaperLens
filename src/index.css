@@ -309,7 +309,7 @@ button:disabled { cursor: not-allowed; opacity: .42; }
 .pdf-viewport { position: relative; min-width: 0; flex: 1; overflow: auto; overscroll-behavior: contain; scroll-behavior: smooth; background: var(--workspace-bg); }
 .pdf-page-list { display: flex; flex-direction: column; align-items: center; min-width: max-content; padding: 24px 42px 76px; }
 .pdf-page-shell { contain: layout paint; position: relative; display: grid; justify-items: center; }
-.pdf-page { position: relative; overflow: hidden; background: var(--pdf-page); box-shadow: 0 0 0 1px rgb(21 25 32 / 10%), 0 4px 16px rgb(21 25 32 / 13%); filter: var(--pdf-filter); transition: width 120ms ease, height 120ms ease; }
+.pdf-page { position: relative; overflow: hidden; background: var(--pdf-page); box-shadow: 0 0 0 1px rgb(21 25 32 / 10%), 0 4px 16px rgb(21 25 32 / 13%); filter: var(--pdf-filter); }
 .pdf-page--placeholder::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / 35%) 45%, transparent 70%); animation: skeleton 1.4s infinite linear; }
 .pdf-canvas { position: absolute; inset: 0; display: block; }
 .pdf-text-layer { position: absolute !important; inset: 0 !important; z-index: 2; overflow: hidden; opacity: 1; line-height: 1; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; user-select: text; }

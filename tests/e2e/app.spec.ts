@@ -76,9 +76,9 @@ test("opens and renders a real text-layer PDF", async ({ page }) => {
   const sentence = page.locator(".textLayer span").filter({ hasText: "Meaning depends on the sentence" }).first();
   const bounds = await sentence.boundingBox();
   if (!bounds) throw new Error("Expected the selected PDF sentence to have visible bounds.");
-  await page.mouse.move(bounds.x + 2, bounds.y + bounds.height / 2);
+  await page.mouse.move(bounds.x + 1, bounds.y + bounds.height / 2);
   await page.mouse.down();
-  await page.mouse.move(bounds.x + bounds.width - 2, bounds.y + bounds.height / 2, { steps: 12 });
+  await page.mouse.move(bounds.x + bounds.width - .1, bounds.y + bounds.height / 2, { steps: 12 });
   await page.mouse.up();
   const diagnostics = await page.evaluate(() => {
     const selection = window.getSelection();
@@ -87,6 +87,7 @@ test("opens and renders a real text-layer PDF", async ({ page }) => {
     return { text: selection?.toString() ?? "", rects: range?.getClientRects().length ?? 0, page: Boolean(start?.closest(".pdf-page")), shell: Boolean(start?.closest(".pdf-page-shell")) };
   });
   expect(diagnostics).toMatchObject({ rects: 1, page: true, shell: true });
+  expect(diagnostics.text.trim()).toBe("Meaning depends on the sentence, section, and surrounding research argument.");
   await expect(page.getByRole("toolbar", { name: "选中文字操作" })).toBeVisible({ timeout: 15_000 });
   await page.getByRole("button", { name: "高亮" }).click();
   await page.getByRole("menuitemradio", { name: "黄色" }).click();

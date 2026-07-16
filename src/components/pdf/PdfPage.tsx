@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 import { RenderingCancelledException, TextLayer, type PDFDocumentProxy, type RenderTask } from "pdfjs-dist";
 import { getPageText } from "../../services/pdf/pageTextCache";
 import { AnnotationOverlay } from "../annotations/AnnotationOverlay";
@@ -19,6 +19,15 @@ export const PdfPage = memo(function PdfPage({ document, paperId, pageNumber, zo
   const [nearViewport, setNearViewport] = useState(pageNumber <= 2);
   const [size, setSize] = useState<PageSize>({ width: 612 * zoom, height: 792 * zoom });
   const [error, setError] = useState<string | null>(null);
+  const pageStyle = {
+    width: size.width,
+    height: size.height,
+    "--scale-factor": zoom,
+    "--user-unit": 1,
+    "--total-scale-factor": zoom,
+    "--scale-round-x": "1px",
+    "--scale-round-y": "1px",
+  } as CSSProperties;
 
   useEffect(() => {
     const root = rootRef.current;
@@ -78,7 +87,7 @@ export const PdfPage = memo(function PdfPage({ document, paperId, pageNumber, zo
 
   return (
     <div className="pdf-page-shell" id={`pdf-page-${pageNumber}`} ref={rootRef} data-page-number={pageNumber}>
-      <div className={`pdf-page ${nearViewport ? "" : "pdf-page--placeholder"}`} style={{ width: size.width, height: size.height }}>
+      <div className={`pdf-page ${nearViewport ? "" : "pdf-page--placeholder"}`} style={pageStyle}>
         {error ? <div className="pdf-page__error" role="alert">第 {pageNumber} 页渲染失败<br /><small>{error}</small></div> : null}
         <canvas ref={canvasRef} className="pdf-canvas" aria-label={`PDF 第 ${pageNumber} 页`} />
         <div ref={textLayerRef} className="textLayer pdf-text-layer" data-page-number={pageNumber} />
