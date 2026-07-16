@@ -1,6 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { mkdirSync } from "node:fs";
-import path from "node:path";
 
 function createDemoPdf(): Buffer {
   const text = [
@@ -125,22 +123,4 @@ test("opens and renders a real text-layer PDF", async ({ page }) => {
   await expect.poll(() => page.locator(".zoom-value").textContent()).not.toBe(zoomBefore);
   expect(pageErrors).toEqual([]);
 
-  if (process.env.PAPERLENS_CAPTURE === "1") {
-    const directory = path.resolve("docs/images");
-    mkdirSync(directory, { recursive: true });
-    await expect(page.locator(".toast")).toHaveCount(0, { timeout: 6_000 });
-    await page.screenshot({ path: path.join(directory, "paperlens-reader.png"), fullPage: true });
-
-    await page.locator(".document-tabs__home").click();
-    await page.getByRole("button", { name: "新建根文件夹" }).click();
-    await page.getByLabel("名称").fill("具身智能");
-    await page.getByRole("button", { name: "保存" }).click();
-    await page.getByRole("button", { name: "全部论文 1" }).click();
-    await page.locator(".paper-folder-menu summary").click();
-    await page.getByRole("checkbox", { name: "具身智能" }).check();
-    await page.locator(".paper-folder-menu summary").click();
-    await page.getByRole("button", { name: "具身智能 1" }).click();
-    await expect(page.locator(".toast")).toHaveCount(0, { timeout: 6_000 });
-    await page.screenshot({ path: path.join(directory, "paperlens-library.png"), fullPage: true });
-  }
 });
