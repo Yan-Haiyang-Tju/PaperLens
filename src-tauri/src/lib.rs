@@ -8,8 +8,9 @@ mod files;
 mod secure_store;
 mod state;
 
-use database::{Database, DATABASE_NAME, DATABASE_URL, INITIAL_MIGRATION};
+use database::{Database, COLLECTIONS_MIGRATION, DATABASE_NAME, DATABASE_URL, INITIAL_MIGRATION};
 use state::AppState;
+use tauri::path::BaseDirectory;
 use tauri::Manager;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
@@ -22,12 +23,20 @@ pub fn run() {
             tauri_plugin_sql::Builder::default()
                 .add_migrations(
                     DATABASE_URL,
-                    vec![Migration {
-                        version: 1,
-                        description: "initial PaperLens local database",
-                        sql: INITIAL_MIGRATION,
-                        kind: MigrationKind::Up,
-                    }],
+                    vec![
+                        Migration {
+                            version: 1,
+                            description: "initial PaperLens local database",
+                            sql: INITIAL_MIGRATION,
+                            kind: MigrationKind::Up,
+                        },
+                        Migration {
+                            version: 2,
+                            description: "nested paper collections",
+                            sql: COLLECTIONS_MIGRATION,
+                            kind: MigrationKind::Up,
+                        },
+                    ],
                 )
                 .build(),
         )
@@ -39,7 +48,10 @@ pub fn run() {
             std::fs::create_dir_all(&data_directory)?;
             let database = Database::new(data_directory.join(DATABASE_NAME));
             database.migrate()?;
-            let state = AppState::new(database)?;
+            let bundled_dictionary_path = app
+                .path()
+                .resolve("resources/ecdict.sqlite3", BaseDirectory::Resource)?;
+            let state = AppState::new(database, bundled_dictionary_path)?;
             app.manage(state);
             Ok(())
         })

@@ -1,15 +1,17 @@
+import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { BookOpenText, Minus, Square, X } from "lucide-react";
 import { useUiStore } from "../../stores/uiStore";
 
 async function runWindowAction(action: "minimize" | "maximize" | "close"): Promise<void> {
+  if (!isTauri()) return;
   try {
     const window = getCurrentWindow();
     if (action === "minimize") await window.minimize();
     if (action === "maximize") await window.toggleMaximize();
     if (action === "close") await window.close();
-  } catch {
-    // The browser preview intentionally has no native window host.
+  } catch (reason) {
+    console.error(`[PaperLens] Window action "${action}" failed.`, reason);
   }
 }
 

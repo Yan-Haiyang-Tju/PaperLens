@@ -4,7 +4,7 @@ use crate::state::AppState;
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
 use reqwest::Client;
-use rusqlite::{params, OptionalExtension};
+use rusqlite::{params, Connection, OpenFlags, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::PathBuf;
@@ -62,6 +62,163 @@ impl DictionaryProvider for LocalDictionaryProvider {
         serialized
             .map(|value| serde_json::from_str(&value).map_err(AppError::from))
             .transpose()
+    }
+}
+
+pub struct BundledDictionaryProvider {
+    path: PathBuf,
+}
+
+type BundledEntry = (String, Option<String>, String, Option<String>);
+
+impl BundledDictionaryProvider {
+    pub fn new(path: PathBuf) -> Self {
+        Self { path }
+    }
+
+    fn connection(&self) -> Result<Connection, AppError> {
+        if !self.path.is_file() {
+            return Err(AppError::NotFound(
+                "内置 ECDICT 资源缺失，请重新安装 PaperLens。".into(),
+            ));
+        }
+        Ok(Connection::open_with_flags(
+            &self.path,
+            OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        )?)
+    }
+}
+
+fn query_bundled_entry(
+    connection: &Connection,
+    term: &str,
+) -> Result<Option<BundledEntry>, AppError> {
+    Ok(connection
+        .query_row(
+            "SELECT term,phonetic,translation,pos FROM entries WHERE term=?1",
+            [term],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )
+        .optional()?)
+}
+
+fn algorithmic_lemma_candidates(term: &str) -> Vec<String> {
+    let mut candidates = Vec::new();
+    let mut add = |candidate: String| {
+        if candidate.len() >= 2 && candidate != term && !candidates.contains(&candidate) {
+            candidates.push(candidate);
+        }
+    };
+
+    let irregular = [
+        ("children", "child"),
+        ("men", "man"),
+        ("women", "woman"),
+        ("teeth", "tooth"),
+        ("feet", "foot"),
+        ("mice", "mouse"),
+        ("geese", "goose"),
+        ("analyses", "analysis"),
+        ("indices", "index"),
+        ("matrices", "matrix"),
+        ("criteria", "criterion"),
+        ("phenomena", "phenomenon"),
+        ("hypotheses", "hypothesis"),
+        ("theses", "thesis"),
+    ];
+    if let Some((_, lemma)) = irregular.iter().find(|(form, _)| *form == term) {
+        add((*lemma).into());
+    }
+
+    if let Some(stem) = term.strip_suffix("ies") {
+        add(format!("{stem}y"));
+    }
+    if let Some(stem) = term.strip_suffix("ied") {
+        add(format!("{stem}y"));
+    }
+    if let Some(stem) = term.strip_suffix("ves") {
+        add(format!("{stem}f"));
+        add(format!("{stem}fe"));
+    }
+    for suffix in ["ing", "ed"] {
+        if let Some(stem) = term.strip_suffix(suffix) {
+            add(stem.into());
+            add(format!("{stem}e"));
+            let mut chars = stem.chars().rev();
+            if let (Some(last), Some(before_last)) = (chars.next(), chars.next()) {
+                if last == before_last {
+                    add(stem[..stem.len() - last.len_utf8()].into());
+                }
+            }
+        }
+    }
+    if let Some(stem) = term.strip_suffix("es") {
+        add(stem.into());
+        add(format!("{stem}e"));
+    }
+    if let Some(stem) = term.strip_suffix('s') {
+        add(stem.into());
+    }
+    candidates
+}
+
+fn part_of_speech_label(pos: Option<&str>) -> Option<String> {
+    let labels = pos?
+        .split('/')
+        .filter_map(|item| item.split(':').next())
+        .filter(|item| !item.is_empty())
+        .take(4)
+        .collect::<Vec<_>>();
+    (!labels.is_empty()).then(|| labels.join(" · "))
+}
+
+fn bundled_result(requested_term: &str, entry: BundledEntry) -> DictionaryResult {
+    let (lemma, phonetic, translation, pos) = entry;
+    let definitions_zh = translation
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .take(10)
+        .map(ToOwned::to_owned)
+        .collect();
+    DictionaryResult {
+        term: requested_term.into(),
+        phonetic,
+        meanings: vec![DictionaryMeaning {
+            part_of_speech: part_of_speech_label(pos.as_deref()),
+            definitions_zh,
+        }],
+        lemma: (requested_term != lemma).then_some(lemma),
+        source: "ECDICT（内置离线）".into(),
+        cached_at: None,
+    }
+}
+
+#[async_trait]
+impl DictionaryProvider for BundledDictionaryProvider {
+    async fn lookup(&self, term: &str) -> Result<Option<DictionaryResult>, AppError> {
+        let normalized = normalize_term(term)?;
+        let connection = self.connection()?;
+        if let Some(entry) = query_bundled_entry(&connection, &normalized)? {
+            return Ok(Some(bundled_result(&normalized, entry)));
+        }
+
+        let stored_lemma: Option<String> = connection
+            .query_row(
+                "SELECT lemma FROM forms WHERE form=?1",
+                [&normalized],
+                |row| row.get(0),
+            )
+            .optional()?;
+        let candidates = stored_lemma
+            .into_iter()
+            .chain(algorithmic_lemma_candidates(&normalized));
+        for lemma in candidates {
+            if let Some(entry) = query_bundled_entry(&connection, &lemma)? {
+                return Ok(Some(bundled_result(&normalized, entry)));
+            }
+        }
+        Ok(None)
     }
 }
 
@@ -298,6 +455,14 @@ pub async fn lookup_dictionary(
             .insert(normalized, result.clone());
         return Ok(Some(result));
     }
+    let bundled = BundledDictionaryProvider::new(state.bundled_dictionary_path.clone());
+    if let Some(result) = bundled.lookup(&normalized).await? {
+        store_cache(&state.database, "ecdict-bundled", &normalized, &result)?;
+        state
+            .dictionary_memory_cache
+            .insert(normalized, result.clone());
+        return Ok(Some(result));
+    }
     if let Some(template) = remote_url_template.filter(|value| !value.trim().is_empty()) {
         let remote = RemoteDictionaryProvider::new(state.http.clone(), template);
         if let Some(mut result) = remote.lookup(&normalized).await? {
@@ -313,7 +478,7 @@ pub async fn lookup_dictionary(
 }
 
 /// Frontend-compatible entrypoint. It still honors the required lookup order:
-/// memory cache -> SQLite cache -> imported local dictionary -> configured URL.
+/// memory cache -> SQLite cache -> imported dictionary -> bundled ECDICT -> configured URL.
 #[tauri::command]
 pub async fn remote_dictionary_lookup(
     state: State<'_, AppState>,
@@ -364,6 +529,11 @@ pub async fn import_local_dictionary(
         )?;
     }
     transaction.commit()?;
+    state.dictionary_memory_cache.clear();
+    state
+        .database
+        .connect()?
+        .execute("DELETE FROM dictionary_cache", [])?;
     Ok(results.len())
 }
 
@@ -387,5 +557,50 @@ mod tests {
             .unwrap();
         assert_eq!(parsed.meanings[0].definitions_zh[0], "顺应性");
         assert_eq!(parsed.source, "remote");
+    }
+
+    #[test]
+    fn generates_common_inflection_candidates() {
+        assert!(algorithmic_lemma_candidates("studies").contains(&"study".into()));
+        assert!(algorithmic_lemma_candidates("trained").contains(&"train".into()));
+        assert!(algorithmic_lemma_candidates("running").contains(&"run".into()));
+        assert!(algorithmic_lemma_candidates("analyses").contains(&"analysis".into()));
+    }
+
+    #[test]
+    fn queries_bundled_entries_and_database_lemmas() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("ecdict.sqlite3");
+        let connection = Connection::open(&path).unwrap();
+        connection
+            .execute_batch(
+                "CREATE TABLE entries(term TEXT PRIMARY KEY,phonetic TEXT,translation TEXT NOT NULL,pos TEXT) WITHOUT ROWID;
+                 CREATE TABLE forms(form TEXT PRIMARY KEY,lemma TEXT NOT NULL) WITHOUT ROWID;
+                 INSERT INTO entries VALUES('study','stʌdi','n. 学习\nv. 研究','n:60/v:40');
+                 INSERT INTO forms VALUES('studied','study');",
+            )
+            .unwrap();
+        drop(connection);
+        let provider = BundledDictionaryProvider::new(path);
+        let result = tauri::async_runtime::block_on(provider.lookup("studied"))
+            .unwrap()
+            .unwrap();
+        assert_eq!(result.lemma.as_deref(), Some("study"));
+        assert_eq!(result.meanings[0].definitions_zh, ["n. 学习", "v. 研究"]);
+        assert_eq!(result.source, "ECDICT（内置离线）");
+    }
+
+    #[test]
+    fn queries_the_shipped_dictionary_resource() {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("resources")
+            .join("ecdict.sqlite3");
+        let provider = BundledDictionaryProvider::new(path);
+        for term in ["transformer", "convolution", "trained", "analyses"] {
+            let result = tauri::async_runtime::block_on(provider.lookup(term))
+                .unwrap()
+                .unwrap_or_else(|| panic!("missing shipped dictionary term: {term}"));
+            assert!(!result.meanings[0].definitions_zh.is_empty());
+        }
     }
 }

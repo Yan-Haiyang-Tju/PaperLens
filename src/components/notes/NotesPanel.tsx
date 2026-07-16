@@ -4,9 +4,11 @@ import { deleteNote, listNotes } from "../../services/database/noteRepository";
 import { useSelectionStore } from "../../stores/selectionStore";
 import type { Note } from "../../types/annotation";
 import { NoteEditor } from "./NoteEditor";
+import { useReaderStore } from "../../stores/readerStore";
 
 export function NotesPanel({ paperId, onNavigate }: { paperId: string; onNavigate: (page: number) => void }) {
   const selection = useSelectionStore((state) => state.selection?.paperId === paperId ? state.selection : null);
+  const pageNumber = useReaderStore((state) => state.pageNumber);
   const [notes, setNotes] = useState<Note[]>([]);
   const [query, setQuery] = useState("");
   const reload = useCallback(() => { void listNotes(paperId, query).then(setNotes); }, [paperId, query]);
@@ -14,7 +16,7 @@ export function NotesPanel({ paperId, onNavigate }: { paperId: string; onNavigat
   const onSaved = useCallback((note: Note) => setNotes((items) => [note, ...items.filter((item) => item.id !== note.id)]), []);
   return (
     <div className="notes-panel">
-      {selection ? <NoteEditor key={selection.id} selection={selection} onSaved={onSaved} /> : <div className="panel-hint"><NotebookPen size={18} /><span>选中论文文字并点击“笔记”以创建上下文笔记。</span></div>}
+      <NoteEditor key={selection?.id ?? `${paperId}:${pageNumber}`} paperId={paperId} pageNumber={pageNumber} selection={selection} onSaved={onSaved} />
       <label className="panel-search"><Search size={14} /><input value={query} placeholder="搜索本篇笔记" onChange={(event) => setQuery(event.currentTarget.value)} /></label>
       <div className="note-list">
         {notes.map((note) => (

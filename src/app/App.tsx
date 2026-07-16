@@ -37,7 +37,7 @@ export default function App() {
     return () => cleanup?.();
   }, [openPaper, showToast]);
   return (
-    <TooltipPrimitive.Provider>
+    <TooltipPrimitive.Provider delayDuration={120} skipDelayDuration={250}>
       <AppShell>
         <Suspense fallback={<div className="empty-state"><div className="empty-state__content"><p>正在准备论文阅读器…</p></div></div>}>
         {view === "settings" ? <SettingsPage /> : view === "library" ? (

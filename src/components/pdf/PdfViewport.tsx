@@ -26,6 +26,7 @@ import { buildExplainSelectionRequest } from "../../services/ai/contextBuilder";
 import { cancelAiRequest, explainSelection } from "../../services/ai/aiClient";
 import { useAiStore } from "../../stores/aiStore";
 import type { ExplainSelectionRequest } from "../../types/ai";
+import { anchoredScrollDelta, capturePageZoomAnchor, zoomFromWheel } from "../../utils/pdfZoom";
 
 export function PdfViewport({ paper }: { paper: Paper }) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -89,7 +90,7 @@ export function PdfViewport({ paper }: { paper: Paper }) {
       if (!selection || selection.paperId !== paperId) { if (["dictionary", "ai", "highlight", "note", "favorite"].includes(action)) showToast({ kind: "info", title: "请先选择论文中的文字" }); return; }
       if (action === "dictionary") { setDictionaryOpen(true); useSelectionStore.getState().closeToolbar(); }
       if (action === "ai") requestAi();
-      if (action === "note") setRightPanelMode("notes");
+      if (action === "note") { setRightPanelMode("notes"); useSelectionStore.getState().closeToolbar(); }
       if (action === "favorite") toggleFavorite();
       if (action === "highlight") {
         const highlight = useAnnotationStore.getState().addHighlight(selection, useSettingsStore.getState().settings.defaultHighlightColor);
@@ -153,6 +154,60 @@ export function PdfViewport({ paper }: { paper: Paper }) {
     return () => window.clearTimeout(timer);
   }, [loadingState, pageNumber, paperId, rotation, showToast, zoom]);
 
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport || loadingState !== "ready") return;
+
+    let restoreFrame = 0;
+    const handleWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const currentZoom = useReaderStore.getState().zoom;
+      const nextZoom = zoomFromWheel(currentZoom, event.deltaY, event.deltaMode, viewport.clientHeight);
+      if (Math.abs(nextZoom - currentZoom) < 0.0001) return;
+
+      const target = event.target instanceof Element ? event.target : globalThis.document.elementFromPoint(event.clientX, event.clientY);
+      const page = target?.closest<HTMLElement>(".pdf-page");
+      const initialPageRect = page?.getBoundingClientRect() ?? null;
+      const anchor = initialPageRect ? capturePageZoomAnchor(initialPageRect, event.clientX, event.clientY) : null;
+      const localX = event.clientX - viewport.getBoundingClientRect().left;
+      const localY = event.clientY - viewport.getBoundingClientRect().top;
+      const contentX = viewport.scrollLeft + localX;
+      const contentY = viewport.scrollTop + localY;
+
+      setZoom(nextZoom);
+      window.cancelAnimationFrame(restoreFrame);
+      let attempts = 0;
+      const restoreAnchor = () => {
+        attempts += 1;
+        if (anchor && initialPageRect && page?.isConnected) {
+          const pageRect = page.getBoundingClientRect();
+          const hasResized = Math.abs(pageRect.width - initialPageRect.width) > 0.01 || Math.abs(pageRect.height - initialPageRect.height) > 0.01;
+          if (!hasResized && attempts < 10) {
+            restoreFrame = window.requestAnimationFrame(restoreAnchor);
+            return;
+          }
+          const delta = anchoredScrollDelta(anchor, pageRect);
+          viewport.scrollLeft += delta.left;
+          viewport.scrollTop += delta.top;
+          return;
+        }
+        const ratio = nextZoom / currentZoom;
+        viewport.scrollLeft = contentX * ratio - localX;
+        viewport.scrollTop = contentY * ratio - localY;
+      };
+      restoreFrame = window.requestAnimationFrame(restoreAnchor);
+    };
+
+    viewport.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      viewport.removeEventListener("wheel", handleWheel);
+      window.cancelAnimationFrame(restoreFrame);
+    };
+  }, [loadingState, setZoom]);
+
   const navigate = useCallback((page: number) => {
     setPageNumber(page);
     globalThis.document.getElementById(`pdf-page-${page}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -189,7 +244,7 @@ export function PdfViewport({ paper }: { paper: Paper }) {
         <SelectionToolbar
           onDictionary={() => { setDictionaryOpen(true); useSelectionStore.getState().closeToolbar(); }}
           onAi={requestAi}
-          onNote={() => setRightPanelMode("notes")}
+          onNote={() => { setRightPanelMode("notes"); useSelectionStore.getState().closeToolbar(); }}
           onFavorite={toggleFavorite}
           onHighlighted={() => showToast({ kind: "success", title: "已添加高亮" })}
           onPersistenceError={(message) => showToast({ kind: "error", title: "高亮保存失败", description: message })}

@@ -1,7 +1,7 @@
 {
   "name": "paperlens",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A local-first academic PDF reader with contextual AI explanations",
   "type": "module",
   "scripts": {
@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "dictionary:build": "python scripts/build_ecdict.py",
     "pretest:e2e": "npm run build",
     "test:e2e": "playwright test",
     "preview": "vite preview",

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { dictionaryResultSchema, type DictionaryProvider, type DictionaryResult } from "../../types/dictionary";
 import { getCachedDictionaryResult, getImportedDictionaryResult, setCachedDictionaryResult } from "../database/dictionaryRepository";
 
-const memoryCache = new Map<string, DictionaryResult | null>();
+const memoryCache = new Map<string, DictionaryResult>();
 
 function normalizeTerm(term: string): string { return term.trim().replace(/\s+/g, " ").toLocaleLowerCase(); }
 
@@ -28,13 +28,13 @@ class ImportedProvider implements DictionaryProvider {
   lookup(term: string): Promise<DictionaryResult | null> { return getImportedDictionaryResult(normalizeTerm(term)); }
 }
 
-class RemoteProvider implements DictionaryProvider {
-  readonly id = "remote";
+class NativeDictionaryProvider implements DictionaryProvider {
+  readonly id = "native-dictionary";
   constructor(private readonly url: string) {}
   async lookup(term: string): Promise<DictionaryResult | null> {
-    if (!this.url || !isTauri()) return null;
-    if (!this.url.startsWith("https://") && !this.url.startsWith("http://127.0.0.1") && !this.url.startsWith("http://localhost")) throw new Error("远程词典地址必须使用 HTTPS。");
-    const result = await invoke<unknown>("remote_dictionary_lookup", { url: this.url, term });
+    if (!isTauri()) return null;
+    if (this.url && !this.url.startsWith("https://") && !this.url.startsWith("http://127.0.0.1") && !this.url.startsWith("http://localhost")) throw new Error("远程词典地址必须使用 HTTPS。");
+    const result = await invoke<unknown>("lookup_dictionary", { term, remoteUrlTemplate: this.url || null });
     if (result === null) return null;
     const raw = z.object({
       term: z.string(), phonetic: z.string().nullable(), meanings: z.array(z.object({ partOfSpeech: z.string().nullable(), definitionsZh: z.array(z.string()) })),
@@ -55,8 +55,7 @@ export async function lookupDictionary(term: string, remoteUrl = ""): Promise<Di
   const normalized = normalizeTerm(term);
   if (!normalized) return null;
   if (memoryProvider.has(normalized)) return memoryProvider.lookup(normalized);
-  const providers: DictionaryProvider[] = [cacheProvider, importedProvider];
-  if (remoteUrl) providers.push(new RemoteProvider(remoteUrl));
+  const providers: DictionaryProvider[] = [cacheProvider, importedProvider, new NativeDictionaryProvider(remoteUrl)];
   for (const provider of providers) {
     const result = await provider.lookup(normalized);
     if (!result) continue;
@@ -64,7 +63,6 @@ export async function lookupDictionary(term: string, remoteUrl = ""): Promise<Di
     if (provider.id !== "sqlite-cache") await setCachedDictionaryResult(await cacheKey(normalized, provider.id), normalized, result);
     return result;
   }
-  memoryCache.set(normalized, null);
   return null;
 }
 

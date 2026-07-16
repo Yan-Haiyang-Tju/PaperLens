@@ -39,9 +39,14 @@ test("library and settings workflows render without runtime errors", async ({ pa
   page.on("pageerror", (error) => pageErrors.push(error));
 
   await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60_000 });
-  await expect(page.getByRole("heading", { name: "论文库" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "全部论文" })).toBeVisible();
   await expect(page.getByText("PaperLens", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "打开 PDF" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "添加 PDF" })).toBeVisible();
+
+  await page.getByRole("button", { name: "新建根文件夹" }).click();
+  await page.getByLabel("名称").fill("具身智能");
+  await page.getByRole("button", { name: "保存" }).click();
+  await expect(page.getByRole("button", { name: "具身智能 0" })).toBeVisible();
 
   await page.getByRole("button", { name: "设置" }).click();
   await expect(page.getByRole("heading", { name: "设置" })).toBeVisible();
@@ -59,7 +64,7 @@ test("opens and renders a real text-layer PDF", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded", timeout: 60_000 });
 
   const chooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: "打开 PDF" }).click();
+  await page.getByRole("button", { name: "添加 PDF" }).click();
   const chooser = await chooserPromise;
   await chooser.setFiles({ name: "paperlens-demo.pdf", mimeType: "application/pdf", buffer: createDemoPdf() });
 
@@ -86,6 +91,37 @@ test("opens and renders a real text-layer PDF", async ({ page }) => {
   await page.getByRole("button", { name: "高亮" }).click();
   await page.getByRole("menuitemradio", { name: "黄色" }).click();
   await expect(page.locator(".highlight-rect--yellow")).toBeVisible();
+
+  await sentence.evaluate((element) => {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    document.dispatchEvent(new Event("selectionchange", { bubbles: true }));
+  });
+  await expect(page.getByRole("toolbar", { name: "选中文字操作" })).toBeVisible();
+  await page.getByRole("button", { name: "笔记", exact: true }).last().click();
+  await expect(page.getByRole("heading", { name: "笔记" })).toBeVisible();
+  await page.locator(".note-editor__textarea").fill("这是一条上下文笔记。");
+  await expect(page.getByText("已保存")).toBeVisible({ timeout: 5_000 });
+
+  await sentence.evaluate((element) => {
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    document.dispatchEvent(new Event("selectionchange", { bubbles: true }));
+  });
+  await expect(page.getByRole("toolbar", { name: "选中文字操作" })).toBeVisible();
+  await page.getByRole("button", { name: "AI 解释", exact: true }).last().click();
+  await page.getByRole("button", { name: "同意并解释" }).click();
+  await expect(page.getByRole("heading", { name: "基础释义" })).toBeVisible({ timeout: 10_000 });
+
+  const zoomBefore = await page.locator(".zoom-value").textContent();
+  await page.locator(".pdf-viewport").dispatchEvent("wheel", { ctrlKey: true, deltaY: -120, clientX: 500, clientY: 350 });
+  await expect.poll(() => page.locator(".zoom-value").textContent()).not.toBe(zoomBefore);
   expect(pageErrors).toEqual([]);
 
   if (process.env.PAPERLENS_CAPTURE === "1") {
@@ -93,5 +129,17 @@ test("opens and renders a real text-layer PDF", async ({ page }) => {
     mkdirSync(directory, { recursive: true });
     await expect(page.locator(".toast")).toHaveCount(0, { timeout: 6_000 });
     await page.screenshot({ path: path.join(directory, "paperlens-reader.png"), fullPage: true });
+
+    await page.locator(".document-tabs__home").click();
+    await page.getByRole("button", { name: "新建根文件夹" }).click();
+    await page.getByLabel("名称").fill("具身智能");
+    await page.getByRole("button", { name: "保存" }).click();
+    await page.getByRole("button", { name: "全部论文 1" }).click();
+    await page.locator(".paper-folder-menu summary").click();
+    await page.getByRole("checkbox", { name: "具身智能" }).check();
+    await page.locator(".paper-folder-menu summary").click();
+    await page.getByRole("button", { name: "具身智能 1" }).click();
+    await expect(page.locator(".toast")).toHaveCount(0, { timeout: 6_000 });
+    await page.screenshot({ path: path.join(directory, "paperlens-library.png"), fullPage: true });
   }
 });

@@ -1,7 +1,7 @@
 import * as Dialog from "@radix-ui/react-dialog";
 import { isTauri } from "@tauri-apps/api/core";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { Bookmark, Bot, ChevronDown, ChevronUp, CircleAlert, Copy, Eye, LoaderCircle, NotebookPen, RefreshCw, Square, X } from "lucide-react";
+import { Bookmark, ChevronDown, ChevronUp, CircleAlert, Copy, Eye, LoaderCircle, MousePointer2, NotebookPen, RefreshCw, Settings, Square, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -16,6 +16,8 @@ import type { AiExplanation } from "../../types/ai";
 import type { Note } from "../../types/annotation";
 import { parsePartialAiPreview } from "../../utils/partialAi";
 import { useToast } from "../ui/ToastProvider";
+import { useSettingsStore } from "../../stores/settingsStore";
+import { useUiStore } from "../../stores/uiStore";
 
 function Markdown({ children }: { children: string }) { return <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeKatex]}>{children}</ReactMarkdown>; }
 
@@ -38,6 +40,8 @@ export function AiExplanationPanel({ onRetry, onOpenNotes }: { onRetry: () => vo
   const [detailed, setDetailed] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const { showToast } = useToast();
+  const settings = useSettingsStore((state) => state.settings);
+  const navigate = useUiStore((state) => state.navigate);
   const preview = useMemo(() => parsePartialAiPreview(partial), [partial]);
 
   const stop = () => {
@@ -67,7 +71,10 @@ export function AiExplanationPanel({ onRetry, onOpenNotes }: { onRetry: () => vo
     showToast({ kind: "success", title: added ? "已收藏术语" : "已取消本次收藏" });
   };
 
-  if (!request) return <div className="panel-hint"><Bot size={20} /><span>选中文字后点击“AI 解释”。不会在划词后自动请求。</span></div>;
+  if (!request) {
+    const needsConfiguration = settings.aiProvider !== "mock" && (!settings.aiModel.trim() || !settings.apiKeyConfigured);
+    return <div className="panel-hint panel-hint--action">{needsConfiguration ? <Settings size={20} /> : <MousePointer2 size={20} />}<strong>{needsConfiguration ? "先连接你的 AI Provider" : "选择一段论文文字"}</strong><span>{needsConfiguration ? "配置模型和 API Key 后，PaperLens 才能生成语境解释。" : "选中文字，再点击浮动工具栏中的“AI 解释”。"}</span>{needsConfiguration ? <button className="secondary-button" type="button" onClick={() => navigate("settings")}><Settings size={14} />打开 AI 设置</button> : null}</div>;
+  }
   return (
     <div className="ai-panel">
       <div className="ai-selection"><q>{request.selection.selectedText}</q><span>第 {request.selection.pageNumber} 页{request.selection.sectionTitle ? ` · ${request.selection.sectionTitle}` : ""}</span></div>

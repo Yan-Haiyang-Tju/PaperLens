@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 pub const DATABASE_NAME: &str = "paperlens.db";
 pub const DATABASE_URL: &str = "sqlite:paperlens.db";
 pub const INITIAL_MIGRATION: &str = include_str!("../../migrations/0001_initial.sql");
+pub const COLLECTIONS_MIGRATION: &str = include_str!("../../migrations/0002_collections.sql");
 
 #[derive(Clone, Debug)]
 pub struct Database {
@@ -37,6 +38,7 @@ impl Database {
         }
         let connection = self.connect()?;
         connection.execute_batch(INITIAL_MIGRATION)?;
+        connection.execute_batch(COLLECTIONS_MIGRATION)?;
         Ok(())
     }
 }
@@ -75,8 +77,17 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(version, 1);
+        assert_eq!(version, 2);
         assert_eq!(table_count, 6);
+
+        let collection_table_count: i64 = connection
+            .query_row(
+                "SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('collections','paper_collections')",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(collection_table_count, 2);
     }
 
     #[test]
@@ -151,5 +162,52 @@ mod tests {
         ).unwrap();
         assert_eq!(content, "updated");
         assert_eq!(relation, "compliance");
+    }
+
+    #[test]
+    fn deleting_nested_collections_keeps_papers_and_removes_links() {
+        let (_directory, db) = test_db();
+        let connection = db.connect().unwrap();
+        connection.execute(
+            "INSERT INTO papers(id,content_hash,file_path,file_name,file_size) VALUES('p','hash','paper.pdf','paper.pdf',1)",
+            [],
+        ).unwrap();
+        connection
+            .execute(
+                "INSERT INTO collections(id,name) VALUES('root','Research')",
+                [],
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO collections(id,name,parent_id) VALUES('child','Robotics','root')",
+                [],
+            )
+            .unwrap();
+        connection
+            .execute(
+                "INSERT INTO paper_collections(paper_id,collection_id) VALUES('p','child')",
+                [],
+            )
+            .unwrap();
+
+        connection
+            .execute("DELETE FROM collections WHERE id='root'", [])
+            .unwrap();
+
+        let paper_count: i64 = connection
+            .query_row("SELECT count(*) FROM papers", [], |row| row.get(0))
+            .unwrap();
+        let collection_count: i64 = connection
+            .query_row("SELECT count(*) FROM collections", [], |row| row.get(0))
+            .unwrap();
+        let link_count: i64 = connection
+            .query_row("SELECT count(*) FROM paper_collections", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(paper_count, 1);
+        assert_eq!(collection_count, 0);
+        assert_eq!(link_count, 0);
     }
 }
