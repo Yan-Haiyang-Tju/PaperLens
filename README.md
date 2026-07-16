@@ -1,158 +1,168 @@
-<div align="center">
-  <img src="public/paperlens-icon.svg" width="96" alt="PaperLens logo" />
+<p align="center">
+  <img src="public/paperlens-icon.svg" width="88" alt="PaperLens logo" />
+</p>
 
-  <h1>PaperLens</h1>
+<h1 align="center">PaperLens</h1>
 
-  <p><strong>Read papers deeply. Keep your research yours.</strong></p>
-  <p>A fast, local-first desktop PDF reader with an offline dictionary, connected notes, organized libraries, and context-aware AI.</p>
+<p align="center">
+  <strong>Read a paper once. Keep its vocabulary forever.</strong><br />
+  A local-first desktop paper reader that turns unfamiliar terminology into a searchable, contextual vocabulary library.
+</p>
 
-  <p>
-    <a href="README.zh-CN.md">简体中文</a>
-    ·
-    <strong>English</strong>
-  </p>
+<p align="center">
+  <a href="README.zh-CN.md"><strong>简体中文</strong></a>
+  ·
+  <strong>English</strong>
+</p>
 
-  <p>
-    <a href="https://github.com/Yan-Haiyang-Tju/PaperLens/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/Download-Windows-2563EB?style=for-the-badge&logo=windows11&logoColor=white" /></a>
-    <a href="https://github.com/Yan-Haiyang-Tju/PaperLens/releases/latest"><img alt="Download for macOS" src="https://img.shields.io/badge/Download-macOS-111827?style=for-the-badge&logo=apple&logoColor=white" /></a>
-    <a href="https://github.com/Yan-Haiyang-Tju/PaperLens/releases/latest"><img alt="Download for Linux" src="https://img.shields.io/badge/Download-Linux-EA580C?style=for-the-badge&logo=linux&logoColor=white" /></a>
-  </p>
+<p align="center">
+  <a href="https://github.com/Yan-Haiyang-Tju/PaperLens/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/Download-Windows-2563EB?style=for-the-badge&logo=windows11&logoColor=white" /></a>
+  <a href="https://github.com/Yan-Haiyang-Tju/PaperLens/releases/latest"><img alt="Download for macOS" src="https://img.shields.io/badge/Download-macOS-111827?style=for-the-badge&logo=apple&logoColor=white" /></a>
+  <a href="https://github.com/Yan-Haiyang-Tju/PaperLens/releases/latest"><img alt="Download for Linux" src="https://img.shields.io/badge/Download-Linux-EA580C?style=for-the-badge&logo=linux&logoColor=white" /></a>
+</p>
 
-  <p><sub>Latest release: v0.2.0 · Free and open source · Your AI provider, your API key</sub></p>
+<p align="center">
+  <a href="https://github.com/Yan-Haiyang-Tju/PaperLens/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Yan-Haiyang-Tju/PaperLens/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://github.com/Yan-Haiyang-Tju/PaperLens/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Yan-Haiyang-Tju/PaperLens?display_name=tag&sort=semver" /></a>
+  <a href="https://github.com/Yan-Haiyang-Tju/PaperLens/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/Yan-Haiyang-Tju/PaperLens/total" /></a>
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-7C3AED.svg" /></a>
+</p>
 
-  [![CI](https://github.com/Yan-Haiyang-Tju/PaperLens/actions/workflows/ci.yml/badge.svg)](https://github.com/Yan-Haiyang-Tju/PaperLens/actions/workflows/ci.yml)
-  [![Latest release](https://img.shields.io/github/v/release/Yan-Haiyang-Tju/PaperLens?display_name=tag&sort=semver)](https://github.com/Yan-Haiyang-Tju/PaperLens/releases/latest)
-  [![Downloads](https://img.shields.io/github/downloads/Yan-Haiyang-Tju/PaperLens/total)](https://github.com/Yan-Haiyang-Tju/PaperLens/releases)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-7C3AED.svg)](LICENSE)
-</div>
+![PaperLens reading Attention Is All You Need with its real document outline](docs/images/paperlens-attention-reader.png)
 
-![PaperLens reading workspace with a rendered PDF and persistent highlight](docs/images/paperlens-reader.png)
+> A PDF reader helps you finish a paper. **PaperLens helps you remember the language of the field.**
 
-PaperLens brings the work around a paper into one focused desktop workspace. Open a local PDF, move through its outline, look up unfamiliar terms, highlight evidence, write notes, and ask for an explanation without losing your place—or handing your library to a hosted reading service.
+## Your papers are full of terminology worth keeping
 
-## Start reading in three steps
+Copying a definition into a separate notebook loses the sentence that made it useful. Browser searches break concentration. Flat word lists forget where a term came from.
 
-1. **Download PaperLens** from the buttons above and install the package for your system.
-2. **Open a PDF** or drop it into the window. Create folders to organize papers by project, topic, or reading list.
-3. **Select any text** to look it up, highlight it, attach a note, save vocabulary, or ask AI for a contextual explanation.
+PaperLens turns vocabulary capture into part of reading:
 
-The built-in English–Chinese dictionary works offline on first launch. AI is optional and uses an API key from your own provider.
+1. **Select a term** in the PDF.
+2. **Get an offline English–Chinese definition** immediately—no setup or account.
+3. **Save it once** with the paper, page, selected text, and surrounding sentence attached.
+4. **Review it later** across one paper or your entire library, then move it from *New* to *Mastered*.
 
-## One workspace for the whole reading loop
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/paperlens-attention-dictionary.png" alt="Offline definition for convolutional in Attention Is All You Need" />
+      <br /><sub><strong>Look it up without leaving the page.</strong> The bundled 400K+ entry ECDICT dictionary works offline from the first launch.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/paperlens-attention-vocabulary-context.png" alt="Saved terminology beside the source paper" />
+      <br /><sub><strong>Keep the reason the word mattered.</strong> Every saved term remains connected to its original sentence and page.</sub>
+    </td>
+  </tr>
+</table>
 
-| | What PaperLens gives you |
+## A vocabulary library built from your actual research
+
+Not a generic flashcard deck. Not a pile of copied definitions. PaperLens builds a terminology index from the papers you are reading—`convolutional`, `transduction`, `recurrent`, and `parallelizable` below all came directly from the abstract of the same paper.
+
+![PaperLens contextual vocabulary workspace with four terms captured from Attention Is All You Need](docs/images/paperlens-attention-vocabulary.png)
+
+- Search terminology across the whole library or stay inside the current paper.
+- Preserve separate occurrences when the same term appears in different papers.
+- Jump from an occurrence back to its source page.
+- Track familiarity as **New**, **Learning**, **Familiar**, or **Mastered**.
+- Import a licensed specialist dictionary when your field needs more than the built-in lexicon.
+
+## One reading loop, without the tab switching
+
+| | PaperLens advantage |
 | --- | --- |
-| **A fluid PDF reader** | Selectable text, thumbnails, fast outline navigation, full-document search, fit modes, rotation, keyboard zoom, and `Ctrl/⌘ + mouse wheel` zoom. Your page and zoom level are restored automatically. |
-| **Instant offline definitions** | A bundled ECDICT-based English–Chinese dictionary works without setup or a network connection. Imported dictionaries and an optional remote provider can extend it. |
-| **Notes that keep their source** | Highlights, Markdown notes, vocabulary, and AI answers stay connected to the selected passage and page instead of becoming an unrelated document. |
-| **Context-aware AI** | Send the selected text together with its surrounding sentence, paragraph, page, and section. Stream the answer, cancel it, retry it, or save it as a note. |
-| **A library you can shape** | Create nested folders, place a paper in more than one collection, and use All Papers, Recent, or Unfiled views—without duplicating the PDF. |
-| **Local-first by default** | Papers and reading data remain on your device. Network access happens only when you explicitly invoke a configured AI or remote dictionary provider. |
+| **Serious PDF reading** | Selectable text, thumbnails, incremental outline, full-document search, rotation, fit modes, and smooth `Ctrl/⌘ + mouse wheel` zoom. Reading position and zoom are restored automatically. |
+| **Contextual vocabulary** | Offline definitions, one-click capture, original sentences, page references, global search, and familiarity tracking in one workflow. |
+| **Notes with provenance** | Markdown notes stay attached to the selected passage and page. General paper notes are also available when no selection is needed. |
+| **AI on your terms** | Optional AI explanations receive the selected passage and its local context only after you explicitly request them. Use your own compatible provider and API key. |
+| **A library that scales** | Nested folders, multi-folder membership, drag and drop, Recent and Unfiled views—without copying the original PDF. |
+| **Local-first by design** | PDFs, reading state, folders, vocabulary, highlights, notes, and cached results stay on your device. No analytics or advertising SDKs. |
 
-PaperLens includes Graphite, Paper Light, Sepia, Midnight, and system-aware themes, with a compact interface designed for long reading sessions.
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/images/paperlens-attention-notes.png" alt="A contextual note attached to attention mechanism" />
+      <br /><sub><strong>Write beside the evidence.</strong> Notes retain the selected phrase and source page.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/images/paperlens-attention-library.png" alt="Attention Is All You Need organized in a Transformer papers folder" />
+      <br /><sub><strong>Organize without duplicating files.</strong> The same local paper can belong to multiple nested collections.</sub>
+    </td>
+  </tr>
+</table>
 
-## Download and install
+<p align="center"><sub>Product screenshots use <a href="https://arxiv.org/abs/1706.03762"><em>Attention Is All You Need</em></a> by Vaswani et al. (2017), arXiv:1706.03762. The paper and its authors are not affiliated with or endorsing PaperLens.</sub></p>
 
-Open the [latest release](https://github.com/Yan-Haiyang-Tju/PaperLens/releases/latest) and choose the file for your platform:
+## Download and start reading
 
-| Platform | Choose | Install |
+Open the [latest release](https://github.com/Yan-Haiyang-Tju/PaperLens/releases/latest), choose your platform, and open a local PDF. The dictionary works immediately; AI configuration is optional.
+
+| Platform | Download | Notes |
 | --- | --- | --- |
-| **Windows 10/11** | `.msi` or `-setup.exe` | Run the installer, then launch PaperLens from the Start menu. |
-| **macOS** | `.dmg` | Open the image and drag PaperLens into Applications. Choose the package matching Apple Silicon or Intel when both are available. |
-| **Linux** | `.AppImage` or `.deb` | Make the AppImage executable and run it, or install the Debian package with your package manager. |
+| **Windows 10/11 x64** | `.msi` or `-setup.exe` | Run the installer, then open PaperLens from the Start menu. |
+| **macOS Apple Silicon** | `aarch64.dmg` | Open the image and drag PaperLens into Applications. |
+| **Linux x86_64** | `.AppImage`, `.deb`, or `.rpm` | Run the AppImage or install the package for your distribution. |
 
-Release builds are currently unsigned. Windows SmartScreen or macOS Gatekeeper may therefore identify PaperLens as an unknown developer. Verify that the file came from this repository's Releases page, then use the operating system's **More info → Run anyway** or **Privacy & Security → Open Anyway** control if you trust the download.
+Current community packages are not code-signed or notarized. Windows SmartScreen or macOS Gatekeeper may show an unknown-developer warning. Download only from this repository's Releases page and review the release details before allowing an unsigned build to run.
 
-## Everyday workflow
+Want to try the exact flow shown above? Download [Attention Is All You Need from arXiv](https://arxiv.org/pdf/1706.03762), open it in PaperLens, and select `convolutional` in the abstract.
 
-### Read and navigate
+## Privacy is a product feature
 
-- Open files from the library, the file picker, or drag and drop.
-- Browse page thumbnails or the document outline, and search across the full paper.
-- Zoom from the toolbar, keyboard, or `Ctrl/⌘ + mouse wheel`; fit the page or width when you want a distraction-free column.
-- Return later at the same page, zoom, and reading position.
+- PaperLens reads PDFs from their existing local paths; it does not silently copy or upload them.
+- Selecting text never starts an AI request or remote dictionary lookup by itself.
+- The built-in dictionary is offline. Remote dictionary access is disabled until you configure it.
+- The exact outbound context is shown before the first AI request; local file paths are removed.
+- API keys are stored by Windows Credential Manager, macOS Keychain, or Linux Secret Service.
+- `.paperlens` backups contain application data, but never API keys or PDF files.
 
-### Look up a term instantly
+See [SECURITY.md](SECURITY.md) for the security model and private vulnerability reporting.
 
-Select a word and choose **Dictionary**. PaperLens checks its memory and local cache, your imported entries, the bundled offline dictionary, and then an optional remote source. No dictionary download or account is required.
-
-The bundled data is derived from [ECDICT](https://github.com/skywind3000/ECDICT) and distributed under the MIT License. Its attribution is included with every application bundle. You can still import a licensed JSON dictionary from Settings if you need specialist terminology.
-
-### Highlight and take notes
-
-Select a passage, then choose a highlight color or create a Markdown note. Open **Notes** from the sidebar to browse paper notes; selecting a note returns you to its source. A paper can also have general notes that are not tied to a selection.
-
-### Ask AI—only when it helps
-
-Open **Settings → AI explanation**, choose OpenAI or an OpenAI-compatible provider, enter a supported model, and save your own API key. Then select text and choose **AI explanation**.
-
-Before the first request, PaperLens shows the exact context that will leave the device. Requests are sent by the native Rust layer; API keys live in Windows Credential Manager, macOS Keychain, or Linux Secret Service and are never exported with your library.
-
-### Organize a growing library
-
-Use folders for projects, fields, courses, or review stages. Folders can be nested, and the same paper can belong to several folders without copying the original file. Deleting a folder never deletes the PDF.
-
-![PaperLens library with nested research folders and local papers](docs/images/paperlens-library.png)
-
-## Useful shortcuts
+## Shortcuts that stay out of the way
 
 | Action | Shortcut | Action | Shortcut |
 | --- | --- | --- | --- |
 | Open PDF | `Mod+O` | Search in paper | `Mod+F` |
-| Dictionary | `Alt+D` | AI explanation | `Alt+A` |
+| Dictionary | `Alt+D` | Save vocabulary | `Alt+S` |
 | Highlight | `Alt+H` | New note | `Alt+N` |
-| Save vocabulary | `Alt+S` | Toggle sidebar | `Mod+Shift+B` |
-| Zoom | `Mod` + `+` / `-` / `0` | Close popover or panel | `Esc` |
+| AI explanation | `Alt+A` | Toggle sidebar | `Mod+Shift+B` |
+| Zoom | `Mod` + `+` / `-` / `0` | Close panel or popover | `Esc` |
 
-`Mod` is Ctrl on Windows/Linux and Command on macOS. Shortcuts can be changed in Settings; conflicts are reported before they interrupt your workflow.
-
-## Privacy by design
-
-- PaperLens reads PDFs from their existing local paths; it does not silently upload or duplicate them.
-- Reading progress, folders, highlights, notes, vocabulary, and cached explanations are stored locally in SQLite.
-- Selecting text alone never starts a dictionary or AI network request.
-- The first AI request includes a preview of the exact outbound context; local file paths are removed.
-- API keys are stored by the operating system's credential service and cannot be read back by the renderer.
-- `.paperlens` backups contain application data, but never API keys or PDF files.
-- PaperLens contains no analytics or advertising SDK.
-
-See [SECURITY.md](SECURITY.md) for the security policy and private vulnerability reporting instructions.
+`Mod` means Ctrl on Windows/Linux and Command on macOS. Shortcuts are configurable and conflicts are reported.
 
 ## Frequently asked questions
 
 <details>
 <summary><strong>Do I need to import a dictionary?</strong></summary>
 
-No. PaperLens includes an offline ECDICT-based English–Chinese dictionary. Importing another dictionary or configuring a remote endpoint is optional.
+No. PaperLens ships with a 400K+ entry ECDICT-based English–Chinese dictionary. Importing a specialist dictionary or configuring a remote provider is optional.
 </details>
 
 <details>
-<summary><strong>Do I need AI to use PaperLens?</strong></summary>
+<summary><strong>Is AI required?</strong></summary>
 
-No. PDF reading, search, folders, highlights, notes, vocabulary, and offline definitions work without AI. AI is a bring-your-own-key enhancement.
+No. PDF reading, search, folders, highlights, notes, vocabulary capture, and offline definitions work without AI. AI is an optional bring-your-own-key enhancement.
 </details>
 
 <details>
 <summary><strong>Does PaperLens upload my papers?</strong></summary>
 
-No. PDFs stay at their original paths. Only the context shown in the privacy preview is sent when you explicitly request an AI explanation.
+No. PDFs stay at their original local paths. Only the context displayed in the privacy preview is sent when you explicitly request an AI explanation.
 </details>
 
 <details>
-<summary><strong>Why does my operating system show a security warning?</strong></summary>
+<summary><strong>Can it read scanned PDFs?</strong></summary>
 
-Current community builds are not code-signed or notarized. Download only from this repository's Releases page and verify the release notes before allowing an unsigned build to run.
-</details>
-
-<details>
-<summary><strong>Can PaperLens read scanned PDFs?</strong></summary>
-
-Scanned pages can be displayed, but selecting and searching their text requires OCR, which is not included yet. Text-layer PDFs provide the complete experience.
+Scanned pages can be displayed, but text selection and search require OCR, which is not bundled yet. Text-layer PDFs provide the full experience.
 </details>
 
 ## Build from source
 
-You need Node.js 22+, npm 10+, stable Rust, and the [Tauri 2 platform prerequisites](https://v2.tauri.app/start/prerequisites/) for your operating system.
+<details>
+<summary><strong>Development setup, architecture, and verification</strong></summary>
+
+Requirements: Node.js 22+, npm 10+, stable Rust, and the [Tauri 2 platform prerequisites](https://v2.tauri.app/start/prerequisites/).
 
 ```bash
 git clone https://github.com/Yan-Haiyang-Tju/PaperLens.git
@@ -161,52 +171,41 @@ npm ci
 npm run tauri build
 ```
 
-For development:
+Useful development commands:
 
 ```bash
-npm run dev          # React UI in a browser
-npm run tauri dev    # Native desktop application
+npm run dev
+npm run tauri dev
 npm run typecheck
 npm run lint
 npm test
 npm run test:e2e
 ```
 
-Python and Conda are not application dependencies. The ECDICT build script is only for maintainers regenerating the bundled dictionary resource.
-
-## Architecture
+Python and Conda are not application dependencies. Python is only used by maintainers when regenerating the committed ECDICT resource.
 
 ```mermaid
 flowchart LR
-  PDF["Local PDF files"] --> UI["React + PDF.js reader"]
-  UI --> IPC["Tauri command boundary"]
+  PDF["Local PDF"] --> READER["React + PDF.js reader"]
+  READER --> IPC["Tauri command boundary"]
   IPC --> DB[("Local SQLite")]
-  IPC --> KEY["OS credential store"]
   IPC --> DICT["Bundled ECDICT"]
+  IPC --> KEY["OS credential store"]
   IPC -. "explicit request" .-> AI["Your AI provider"]
 ```
 
-The React renderer owns reading interactions and presentation. Rust owns privileged file access, the bundled dictionary, provider networking, credentials, import/export validation, cancellation, and structured AI response repair. Tauri capabilities and a strict content security policy keep that boundary narrow.
+The renderer owns reading interactions. Rust owns privileged file access, bundled dictionary lookup, provider networking, credentials, import/export validation, cancellation, and structured AI response repair. A strict capability policy and CSP keep that boundary narrow.
 
-## Test and contribute
+</details>
 
-```bash
-npm run typecheck
-npm run lint
-npm test
-npm run build
-npm run test:e2e
-cargo fmt --manifest-path src-tauri/Cargo.toml --check
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-cargo test --manifest-path src-tauri/Cargo.toml --all-targets
-```
+## Contributing
 
-Bug reports, focused feature proposals, documentation improvements, and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing. For sensitive reports, follow [SECURITY.md](SECURITY.md) instead of opening a public issue.
+Focused bug reports, feature proposals, documentation improvements, and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first. Report security issues privately through [SECURITY.md](SECURITY.md).
 
 ## Acknowledgements
 
 - [ECDICT](https://github.com/skywind3000/ECDICT), used for the bundled offline dictionary under the MIT License.
-- [PDF.js](https://github.com/mozilla/pdf.js), [Tauri](https://tauri.app/), and the wider open-source ecosystem that makes a private, capable desktop reader possible.
+- [PDF.js](https://github.com/mozilla/pdf.js), [Tauri](https://tauri.app/), React, and the wider open-source ecosystem.
 
 ## License
 
